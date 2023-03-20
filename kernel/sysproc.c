@@ -10,8 +10,10 @@ uint64
 sys_exit(void)
 {
   int n;
+  char *msg;
   argint(0, &n);
-  exit(n);
+  argstr(1, msg, MAXEXIT)
+  exit(n, msg);
   return 0;  // not reached
 }
 
@@ -32,6 +34,7 @@ sys_wait(void)
 {
   uint64 p;
   argaddr(0, &p);
+  copyout()
   return wait(p);
 }
 
