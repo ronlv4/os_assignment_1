@@ -169,20 +169,11 @@ main(void)
     if(fork1() == 0)
     {
       runcmd(parsecmd(buf));\
-      printf("after runcmd\n");
     }
-    printf("before wait\n");
-    char exit_msg[MAXEXIT];
     int wstatus;
+    char exit_msg[MAXEXIT];
     wait(&wstatus, exit_msg);
-    printf("wstatus: %d\n", wstatus);
-    printf("&exit_msg: %p\n", &exit_msg);
-    printf("1\n");
-    printf("exit_msg: %s\n", exit_msg);
-    printf("2\n");
-    // printf("*exit_msg: %s\n", *exit_msg);
-    printf("in sh, exit_msg: %s\n", exit_msg);
-    printf("3\n");
+    printf(exit_msg);
   }
   exit(0, 0);
 }

@@ -14,7 +14,6 @@ sys_exit(void)
   argint(0, &n);
   if (argstr(1, msg, MAXEXIT) < 0)
     return -1;
-  printf("in sys_exit, got msg: %s\n", msg);
   exit(n, msg);
   return 0;  // not reached
 }
@@ -38,7 +37,6 @@ sys_wait(void)
   uint64 msg;
   argaddr(0, &p);
   argaddr(1, &msg);
-  // printf("in sys_wait, got msg: %s\n", msg);
   return wait(p, msg);
 }
 

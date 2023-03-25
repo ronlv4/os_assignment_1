@@ -377,7 +377,6 @@ exit(int status, char *msg)
 
   p->xstate = status;
   strncpy(p->exit_msg, msg, strlen(msg));
-  printf("in exit, msg: %s\n", msg);
   p->state = ZOMBIE;
 
   release(&wait_lock);
@@ -410,8 +409,6 @@ wait(uint64 addr, uint64 msg)
         if(pp->state == ZOMBIE){
           // Found one.
           pid = pp->pid;
-          printf("in wait, msg: %s\n", (char *)&pp->exit_msg);
-          printf("size of exit msg: %d\n", sizeof(pp->exit_msg));
           // Copy from kernel to user.
           if(addr != 0 &&
           (copyout(p->pagetable, addr, (char *)&pp->xstate, sizeof(pp->xstate)) < 0 ||
