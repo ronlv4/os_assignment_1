@@ -376,7 +376,8 @@ exit(int status, char *msg)
   acquire(&p->lock);
 
   p->xstate = status;
-  p->exit_msg = msg;
+  strncpy(p->exit_msg, msg, strlen(msg));
+  printf("in exit, msg: %s\n", msg);
   p->state = ZOMBIE;
 
   release(&wait_lock);
@@ -389,7 +390,7 @@ exit(int status, char *msg)
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
 int
-wait(uint64 addr, char *msg)
+wait(uint64 addr, uint64 msg)
 {
   struct proc *pp;
   int havekids, pid;
@@ -409,14 +410,12 @@ wait(uint64 addr, char *msg)
         if(pp->state == ZOMBIE){
           // Found one.
           pid = pp->pid;
+          printf("in wait, msg: %s\n", (char *)&pp->exit_msg);
+          printf("size of exit msg: %d\n", sizeof(pp->exit_msg));
           // Copy from kernel to user.
-// Copy len bytes from src to virtual address dstva in a given page table.
-// Return 0 on success, -1 on error.
-// int copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
-
           if(addr != 0 &&
-          copyout(p->pagetable, addr, (char *)&pp->xstate, sizeof(pp->xstate)) < 0 &&
-          copyout(p->pagetable, addr + sizeof(pp->xstate), msg, MAXEXIT) < 0) {
+          (copyout(p->pagetable, addr, (char *)&pp->xstate, sizeof(pp->xstate)) < 0 ||
+          copyout(p->pagetable, msg, (char *)&pp->exit_msg, sizeof(pp->exit_msg)) < 0)) {
             release(&pp->lock);
             release(&wait_lock);
             return -1;

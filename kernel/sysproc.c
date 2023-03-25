@@ -10,9 +10,11 @@ uint64
 sys_exit(void)
 {
   int n;
-  char *msg;
+  char msg[MAXEXIT];
   argint(0, &n);
-  argstr(1, msg, MAXEXIT)
+  if (argstr(1, msg, MAXEXIT) < 0)
+    return -1;
+  printf("in sys_exit, got msg: %s\n", msg);
   exit(n, msg);
   return 0;  // not reached
 }
@@ -33,9 +35,11 @@ uint64
 sys_wait(void)
 {
   uint64 p;
+  uint64 msg;
   argaddr(0, &p);
-  copyout()
-  return wait(p);
+  argaddr(1, &msg);
+  // printf("in sys_wait, got msg: %s\n", msg);
+  return wait(p, msg);
 }
 
 uint64

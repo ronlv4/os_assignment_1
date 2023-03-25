@@ -11,7 +11,6 @@ _main()
 {
   extern int main();
   main();
-  exit(0);
 }
 
 char*
