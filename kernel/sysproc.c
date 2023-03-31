@@ -102,5 +102,14 @@ uint64 sys_memsize(void)
 
 uint64 sys_set_ps_priority(void)
 {
+  int priority;
+  struct proc *p;
+
+  argint(0, &priority);
+  p = myproc();
+
+  acquire(&p->lock);
+  p->ps_priority = priority;
+  release(&p->lock);
   return 0;
 }

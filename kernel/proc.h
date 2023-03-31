@@ -92,6 +92,8 @@ struct proc {
   int xstate;                  // Exit status to be returned to parent's wait
   char exit_msg[MAXEXIT];      // Exit message to be returned to parent's wait
   int pid;                     // Process ID
+  long long accumulator;       // accumulated value to determine next running process
+  int ps_priority;             // process's running priority.
 
   // wait_lock must be held when using this:
   struct proc *parent;         // Parent process
