@@ -14,6 +14,11 @@ sys_exit(void)
   argint(0, &n);
   if (argstr(1, msg, MAXEXIT) < 0)
     return -1;
+  if (*msg >= 0 && *msg < 33)
+  {
+    exit(n, "");
+  }
+  
   exit(n, msg);
   return 0;  // not reached
 }
