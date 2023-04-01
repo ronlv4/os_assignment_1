@@ -15,6 +15,7 @@ struct proc *initproc;
 int nextpid = 1;
 struct spinlock pid_lock;
 
+
 extern void forkret(void);
 static void freeproc(struct proc *p);
 
@@ -124,6 +125,10 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
+  p->exit_msg[0] = 0;
+  p->accumulator = 0;
+  p->ps_priority = 5;
+
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -437,6 +442,25 @@ wait(uint64 addr, uint64 msg)
   }
 }
 
+struct proc* find_runnable_min_acc_proc()
+{
+    long long min_acc = (1ull << 63) - 1ull;
+    struct proc *min_acc_proc = 0;
+    struct proc *p;
+    for(p = proc; p < &proc[NPROC]; p++)
+    {
+        if (p->state == RUNNABLE)
+        {
+            if (p->accumulator < min_acc)
+            {
+                min_acc = p->accumulator;
+                min_acc_proc = p;
+            }
+        }
+    }
+    return min_acc_proc;
+}
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -444,8 +468,7 @@ wait(uint64 addr, uint64 msg)
 //  - swtch to start running that process.
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
-void
-scheduler(void)
+void scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
@@ -454,23 +477,96 @@ scheduler(void)
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
+    struct proc *min_acc_proc = 0;
+    long long min_acc = 0;
 
-    for(p = proc; p < &proc[NPROC]; p++) {
+    for(p = proc; p < &proc[NPROC]; p++)
+    {
+      
+
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
+        if (!min_acc_proc || p->accumulator < min_acc)
+            {
+              if (min_acc_proc)
+              {
+                release(&min_acc_proc->lock);
+              }              
+              min_acc = p->accumulator;
+              min_acc_proc = p;
+              continue;
+            }
       }
       release(&p->lock);
     }
+    // acquire(&min_acc_proc->lock);
+    // printf("found %s\n", min_acc_proc->name);
+    if (!min_acc_proc)
+    {
+      continue;
+    }
+    
+    min_acc_proc->state = RUNNING;
+    c->proc = min_acc_proc;
+    swtch(&c->context, &min_acc_proc->context);
+
+    // Process is done running for now.
+    // It should have changed its p->state before coming back.
+    c->proc = 0;
+    release(&min_acc_proc->lock);
+  }
+}
+
+void another_scheduler_try(void)
+{
+  // long long min_acc = 0;
+  struct proc *p;
+  struct cpu *c = mycpu();
+  // struct proc *min_acc_proc = 0;
+  
+  c->proc = 0;
+  for(;;){
+    // Avoid deadlock by ensuring that devices can interrupt.
+    intr_on();
+
+    struct proc* process = 0;
+      int dp = 101;
+      for (p = proc; p < &proc[NPROC]; p++)
+      {
+        acquire(&p->lock);
+
+        int val = p->ps_priority;
+        int tmp = val < 100? val : 100;
+        int processDp = 0 > tmp ? 0 : tmp;
+
+        int flag1 = dp == processDp;
+
+        if (p->state == RUNNABLE)
+        {
+          if(!process || dp > processDp || flag1)
+          {
+            if (process)
+              release(&process->lock);
+
+            process = p;
+            dp = processDp;
+            continue;
+          }
+        }
+        release(&p->lock);
+      }
+
+      if (process)
+      {
+        process->state = RUNNING;
+        c->proc = process;
+        swtch(&c->context, &process->context);
+        c->proc = 0;
+        release(&process->lock);
+      }
   }
 }
 
