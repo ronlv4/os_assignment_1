@@ -173,7 +173,7 @@ main(void)
     int wstatus;
     char exit_msg[MAXEXIT];
     wait(&wstatus, exit_msg);
-    printf(exit_msg);
+    write(1, exit_msg, strlen(exit_msg));
   }
   exit(0, 0);
 }
