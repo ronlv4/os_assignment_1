@@ -133,3 +133,22 @@ printfinit(void)
   initlock(&pr.lock, "pr");
   pr.locking = 1;
 }
+
+void backtrace(void)
+{
+  // printf("in backtrace");
+  uint64 fp, ra;
+  
+  fp = r_fp();
+
+  // acquire(&pr.lock);
+  printf("backtrace:\n");
+  while(fp != 0 && fp < PHYSTOP && fp >= KSTACK(0)) {
+    ra = ((uint64*)fp)[-1]; // saved return address
+    printf((char*)"%p\n", ra);
+    fp = ((uint64*)fp)[-2]; // saved frame pointer
+    if (fp == r_sp()) break; // end of stack
+  }
+  printf("finished loop\n");
+  // release(&pr.lock);
+}
