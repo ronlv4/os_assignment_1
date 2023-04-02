@@ -14,8 +14,9 @@
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
-		"ms-vscode.cpptools-themes",
 		"ms-vscode.cpptools",
+		"ms-vscode.cpptools-themes",
+		"ms-vscode.cpptools-extension-pack",
 		"vscode-icons-team.vscode-icons"
 	],
 

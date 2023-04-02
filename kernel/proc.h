@@ -86,14 +86,19 @@ struct proc {
   struct spinlock lock;
 
   // p->lock must be held when using these:
-  enum procstate state;        // Process state
-  void *chan;                  // If non-zero, sleeping on chan
-  int killed;                  // If non-zero, have been killed
-  int xstate;                  // Exit status to be returned to parent's wait
-  char exit_msg[MAXEXIT];      // Exit message to be returned to parent's wait
-  int pid;                     // Process ID
-  long long accumulator;       // accumulated value to determine next running process
-  int ps_priority;             // process's running priority.
+  enum procstate state;       // Process state
+  void *chan;                 // If non-zero, sleeping on chan
+  int killed;                 // If non-zero, have been killed
+  int xstate;                 // Exit status to be returned to parent's wait
+  char exit_msg[MAXEXIT];     // Exit message to be returned to parent's wait
+  int pid;                    // Process ID
+  long long accumulator;      // Accumulated value to determine next running process
+  int ps_priority;            // Process priority
+  int cfs_priority;           // Process fair priority
+  int rtime;                  // Process run time
+  int stime;                  // Process sleep time
+  int retime;                 // Process runnable time
+
 
   // wait_lock must be held when using this:
   struct proc *parent;         // Parent process

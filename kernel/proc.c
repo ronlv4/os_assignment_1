@@ -126,7 +126,7 @@ found:
   p->pid = allocpid();
   p->state = USED;
   p->exit_msg[0] = 0;
-  p->accumulator = 0;
+  p->accumulator = find_min_accumulator(p);
   p->ps_priority = 5;
 
 
@@ -232,6 +232,61 @@ uchar initcode[] = {
   0x74, 0x00, 0x00, 0x24, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00
 };
+
+long long find_min_accumulator(struct proc *exclude)
+{
+    long long min_acc = (1ull << 63) - 1ull;
+    int found = 0;
+    struct proc *p;
+    for(p = proc; p < &proc[NPROC]; p++)
+    {
+    if (p == exclude)
+    {
+      continue;
+    }
+
+      acquire(&p->lock);
+        if (p->state == RUNNABLE || p->state == RUNNING)
+        {
+            if (p->accumulator < min_acc)
+            {
+              found = 1;
+              min_acc = p->accumulator;
+            }
+        }
+        release(&p->lock);
+    }
+    if (found)
+    {
+      return min_acc;
+    }
+    
+    return 0;
+}
+
+void update_process_time_values()
+{
+  struct proc *p;
+
+  for (p = proc; p < &proc[NPROC]; p++)
+  {
+    acquire(&p->lock);
+
+    if (p->state == RUNNING)
+    {
+      p->rtime++;
+    }
+    else if (p->state == RUNNABLE)
+    {
+      p->retime++;
+    }
+    else if(p->state == SLEEPING)
+    {
+      p->stime++;
+    }
+    release(&p->lock);
+  }
+}
 
 // Set up first user process.
 void
@@ -477,13 +532,12 @@ void scheduler(void)
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
+
     struct proc *min_acc_proc = 0;
-    long long min_acc = 0;
+    long long min_acc = (1ull << 63) - 1ull;;
 
     for(p = proc; p < &proc[NPROC]; p++)
     {
-      
-
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
@@ -502,8 +556,7 @@ void scheduler(void)
       }
       release(&p->lock);
     }
-    // acquire(&min_acc_proc->lock);
-    // printf("found %s\n", min_acc_proc->name);
+
     if (!min_acc_proc)
     {
       continue;
@@ -604,6 +657,7 @@ yield(void)
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
+  p->accumulator += p->ps_priority;
   sched();
   release(&p->lock);
 }
@@ -672,6 +726,7 @@ wakeup(void *chan)
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
         p->state = RUNNABLE;
+        p->accumulator = find_min_accumulator(p);
       }
       release(&p->lock);
     }
@@ -700,6 +755,17 @@ kill(int pid)
     release(&p->lock);
   }
   return -1;
+}
+
+int set_ps_priority(int priority)
+{
+  struct proc *p;
+
+  p = myproc();
+  acquire(&p->lock);
+  p->ps_priority = priority;
+  release(&p->lock);
+  return 0;
 }
 
 void
@@ -776,7 +842,7 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    printf("%d %s %s", p->pid, state, p->name);
+    printf("%d %s %s %d", p->pid, state, p->name, p->ps_priority);
     printf("\n");
   }
 }
