@@ -284,6 +284,7 @@ void update_process_time_values()
     {
       p->stime++;
     }
+
     release(&p->lock);
   }
 }
@@ -782,18 +783,15 @@ int set_cfs_priority(int priority)
 int get_cfs_stats(int pid, uint64 cfs_priority, uint64 rtime, uint64 stime, uint64 retime)
 {
   struct proc *p;
-  int found = 0;
 
   for(p = proc; p < &proc[NPROC]; p++){
       if(p->pid == pid){
         acquire(&p->lock);
         
-        found = 1;
-
-        if (copyout(p->pagetable, cfs_priority, (int *)&p->cfs_priority, sizeof(p->cfs_priority)) < 0 ||
-        copyout(p->pagetable, rtime, (int *)&p->rtime, sizeof(p->rtime)) < 0 ||
-        copyout(p->pagetable, stime, (int *)&p->stime, sizeof(p->stime)) < 0 ||
-        copyout(p->pagetable, retime, (int *)&p->retime, sizeof(p->retime)) < 0)
+        if (copyout(p->pagetable, cfs_priority, (char *)&p->cfs_priority, sizeof(p->cfs_priority)) < 0 ||
+        copyout(p->pagetable, rtime, (char *)&p->rtime, sizeof(p->rtime)) < 0 ||
+        copyout(p->pagetable, stime, (char *)&p->stime, sizeof(p->stime)) < 0 ||
+        copyout(p->pagetable, retime, (char *)&p->retime, sizeof(p->retime)) < 0)
         {
           release(&p->lock);
           return -1;

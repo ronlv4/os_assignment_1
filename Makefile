@@ -119,6 +119,7 @@ UPROGS=\
 	$U/_cat\
 	$U/_echo\
 	$U/_forktest\
+	$U/_get_cfs_priority\
 	$U/_goodbye\
 	$U/_grep\
 	$U/_helloworld\
@@ -129,6 +130,8 @@ UPROGS=\
 	$U/_memsize_test\
 	$U/_mkdir\
 	$U/_rm\
+	$U/_set_cfs_priority\
+	$U/_set_ps_priority\
 	$U/_sh\
 	$U/_stressfs\
 	$U/_usertests\
