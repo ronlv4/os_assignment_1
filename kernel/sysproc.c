@@ -122,3 +122,17 @@ uint64 sys_set_cfs_priority(void)
 
   return set_cfs_priority(priority);
 }
+
+uint64 sys_get_cfs_stats(void)
+{
+  int pid;
+  uint64 cfs_priority, rtime, stime, retime;
+
+  argint(0, &pid);
+  argaddr(1, &cfs_priority);
+  argaddr(2, &rtime);
+  argaddr(3, &stime);
+  argaddr(4, &retime);
+
+  return get_cfs_stats(pid, cfs_priority, rtime, stime, retime);
+}
