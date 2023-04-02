@@ -768,6 +768,17 @@ int set_ps_priority(int priority)
   return 0;
 }
 
+int set_cfs_priority(int priority)
+{
+  struct proc *p;
+
+  p = myproc();
+  acquire(&p->lock);
+  p->cfs_priority = priority;
+  release(&p->lock);
+  return 0;
+}
+
 void
 setkilled(struct proc *p)
 {

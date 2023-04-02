@@ -93,6 +93,7 @@ long long       find_min_accumulator(struct proc*);
 void            update_process_time_values();
 int             kill(int);
 int             set_ps_priority(int);
+int             set_cfs_priority(int);
 int             killed(struct proc*);
 void            setkilled(struct proc*);
 struct cpu*     mycpu(void);
