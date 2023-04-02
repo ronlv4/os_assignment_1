@@ -119,7 +119,7 @@ UPROGS=\
 	$U/_cat\
 	$U/_echo\
 	$U/_forktest\
-	$U/_get_cfs_priority\
+	$U/_get_cfs_stats\
 	$U/_goodbye\
 	$U/_grep\
 	$U/_helloworld\

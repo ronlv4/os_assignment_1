@@ -4,8 +4,6 @@
 int
 main(int argc, char **argv)
 {
-  int i;
-
   if(argc < 2){
     fprintf(2, "usage: set_cfs_priority priority\n");
     exit(1, 0);
@@ -19,6 +17,10 @@ main(int argc, char **argv)
     exit(1, 0);
   }
 
-  set_cfs_priority(priority);
+  if (set_cfs_priority(priority) < 0)
+  {
+    fprintf(2, "error in set_cfs_priority system call\n");
+    exit(1, 0);
+  }
   exit(0, 0);
 }

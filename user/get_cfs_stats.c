@@ -1,4 +1,5 @@
 #include "kernel/types.h"
+#include "kernel/stat.h"
 #include "user/user.h"
 
 int main(int argc, char **argv)
@@ -12,9 +13,9 @@ int main(int argc, char **argv)
 
   int pid = atoi(argv[1]);
 
-  if (get_cfs_priority(pid, &cfs_priority, &rtime, &stime, &retime))
+  if (get_cfs_stats(pid, &cfs_priority, &rtime, &stime, &retime))
   {
-    fprintf(2, "error in get_cfs_priority system call\n");
+    fprintf(2, "error in get_cfs_stats system call\n");
     exit(1, 0);
   }
   

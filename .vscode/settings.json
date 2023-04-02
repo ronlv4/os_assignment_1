@@ -4,6 +4,8 @@
         "riscv.h": "c",
         "defs.h": "c",
         "exception": "c",
-        "new": "c"
+        "new": "c",
+        "user.h": "c",
+        "stat.h": "c"
     },
 }
