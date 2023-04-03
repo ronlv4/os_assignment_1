@@ -132,6 +132,7 @@ UPROGS=\
 	$U/_mkdir\
 	$U/_rm\
 	$U/_set_cfs_priority\
+	$U/_set_policy\
 	$U/_set_ps_priority\
 	$U/_sh\
 	$U/_stressfs\

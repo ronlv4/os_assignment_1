@@ -15,6 +15,9 @@ struct proc *initproc;
 int nextpid = 1;
 struct spinlock pid_lock;
 
+static int sched_policy = 0;
+//TODO should sched policy have a lock? does the scheduler need to acquire it for each complete p table iteration?
+
 
 extern void forkret(void);
 static void freeproc(struct proc *p);
@@ -541,93 +544,7 @@ int get_process_vruntime(struct proc *p)
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
 void
-rr_scheduler(void)
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
-  
-  c->proc = 0;
-  for(;;){
-    // Avoid deadlock by ensuring that devices can interrupt.
-    intr_on();
-
-    for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
-      if(p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
-      }
-      release(&p->lock);
-    }
-  }
-}
-
-// Per-CPU process scheduler.
-// Each CPU calls scheduler() after setting itself up.
-// Scheduler never returns.  It loops, doing:
-//  - choose a process to run.
-//  - swtch to start running that process.
-//  - eventually that process transfers control
-//    via swtch back to the scheduler.
-void pbs_scheduler(void)
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
-  
-  c->proc = 0;
-  for(;;){
-    // Avoid deadlock by ensuring that devices can interrupt.
-    intr_on();
-
-    struct proc *min_acc_proc = 0;
-    long long min_acc = (1ull << 63) - 1ull;;
-
-    for(p = proc; p < &proc[NPROC]; p++)
-    {
-      acquire(&p->lock);
-      if(p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        if (!min_acc_proc || p->accumulator < min_acc)
-            {
-              if (min_acc_proc)
-              {
-                release(&min_acc_proc->lock);
-              }              
-              min_acc = p->accumulator;
-              min_acc_proc = p;
-              continue;
-            }
-      }
-      release(&p->lock);
-    }
-
-    if (!min_acc_proc)
-    {
-      continue;
-    }
-    
-    min_acc_proc->state = RUNNING;
-    c->proc = min_acc_proc;
-    swtch(&c->context, &min_acc_proc->context);
-
-    // Process is done running for now.
-    // It should have changed its p->state before coming back.
-    c->proc = 0;
-    release(&min_acc_proc->lock);
-  }
-}
-
-void cfs_scheduler(void)
+scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
@@ -639,28 +556,51 @@ void cfs_scheduler(void)
     intr_on();
 
     struct proc *next_proc = 0;
-    int min_vruntime = 2147483647;
+    long long min_acc = (1ull << 63) - 1ull;;
+    int min_vruntime = (1u << 31) - 1u;
 
-    for(p = proc; p < &proc[NPROC]; p++)
-    {
+    for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
 
-        process_vruntime = get_process_vruntime(p);
+        if (sched_policy == 1) // cfs
+        {
+          process_vruntime = get_process_vruntime(p);
 
-        if (!next_proc || process_vruntime < min_vruntime)
-            {
-              if (next_proc)
+          if (!next_proc || process_vruntime < min_vruntime)
               {
-                release(&next_proc->lock);
-              }              
-              min_vruntime = process_vruntime;
-              next_proc = p;
-              continue;
-            }
+                if (next_proc)
+                {
+                  release(&next_proc->lock);
+                }              
+                min_vruntime = process_vruntime;
+                next_proc = p;
+                continue;
+              }
+        }
+
+        else if (sched_policy == 2) // pbs
+        {
+          if (!next_proc || p->accumulator < min_acc)
+              {
+                if (next_proc)
+                {
+                  release(&next_proc->lock);
+                }              
+                min_acc = p->accumulator;
+                next_proc = p;
+                continue;
+              }
+        }
+
+        else // round robin
+        {
+          next_proc = p;
+          break;
+        }
       }
       release(&p->lock);
     }
@@ -858,6 +798,12 @@ int get_cfs_stats(int pid, uint64 cfs_priority, uint64 rtime, uint64 stime, uint
       }
   }
   return -1; // pid not found
+}
+
+int set_policy(int policy)
+{
+  sched_policy = policy;
+  return 0;
 }
 
 void
