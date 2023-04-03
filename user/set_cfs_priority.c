@@ -6,7 +6,7 @@ main(int argc, char **argv)
 {
   if(argc < 2){
     fprintf(2, "usage: set_cfs_priority priority\n");
-    exit(1, 0);
+    exit(1, "");
   }
 
   int priority = atoi(argv[1]);
@@ -14,13 +14,13 @@ main(int argc, char **argv)
   if (priority != 0 && priority != 1 && priority != 2)
   {
     printf("invalid priority, must be one of {0, 1, 2}\n");
-    exit(1, 0);
+    exit(1, "");
   }
 
   if (set_cfs_priority(priority) < 0)
   {
     fprintf(2, "error in set_cfs_priority system call\n");
-    exit(1, 0);
+    exit(1, "");
   }
-  exit(0, 0);
+  exit(0, "");
 }

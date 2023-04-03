@@ -36,9 +36,9 @@ int main(int argc, char **argv)
   if (get_cfs_stats(pid, &cfs_priority, &rtime, &stime, &retime))
   {
     fprintf(2, "error in get_cfs_stats system call\n");
-    exit(1, 0);
+    exit(1, "");
   }
   
   fprintf(1, "cfs_priority: %d rtime: %d stime: %d retime: %d\n", cfs_priority, rtime, stime, retime);
-  exit(0, 0);
+  exit(0, "");
 }
