@@ -806,6 +806,11 @@ int set_policy(int policy)
   return 0;
 }
 
+int get_policy()
+{
+  return sched_policy;
+}
+
 void
 setkilled(struct proc *p)
 {
@@ -880,7 +885,7 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    printf("%d %s %s %d", p->pid, state, p->name, p->ps_priority);
+    printf("%d %s %s %d, %d", p->pid, state, p->name, p->ps_priority, p->cfs_priority);
     printf("\n");
   }
 }

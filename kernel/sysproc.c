@@ -145,3 +145,8 @@ uint64 sys_set_policy(void)
 
   return set_policy(policy);
 }
+
+uint64 sys_get_policy(void)
+{
+  return get_policy(); 
+}

@@ -121,6 +121,7 @@ UPROGS=\
 	$U/_echo\
 	$U/_forktest\
 	$U/_get_cfs_stats\
+	$U/_get_policy\
 	$U/_goodbye\
 	$U/_grep\
 	$U/_helloworld\
