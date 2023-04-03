@@ -125,9 +125,12 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
-  p->exit_msg[0] = 0;
   p->accumulator = find_min_accumulator(p);
   p->ps_priority = 5;
+  p->cfs_priority = 2;
+  p->rtime = 0;
+  p->stime = 0;
+  p->retime = 0;
 
 
   // Allocate a trapframe page.
@@ -170,6 +173,7 @@ freeproc(struct proc *p)
   p->pid = 0;
   p->parent = 0;
   p->name[0] = 0;
+  p->exit_msg[0] = 0;
   p->chan = 0;
   p->killed = 0;
   p->xstate = 0;
@@ -356,6 +360,7 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
+  np->cfs_priority = p->cfs_priority;
 
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
@@ -517,6 +522,17 @@ struct proc* find_runnable_min_acc_proc()
     return min_acc_proc;
 }
 
+int get_process_vruntime(struct proc *p)
+{
+  static int priority_to_decay_factor[] = {
+    [1] 75,
+    [2] 100,
+    [3] 125
+  };
+
+  return priority_to_decay_factor[p->cfs_priority] * p->rtime / (p->rtime + p->stime + p->retime);
+}
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -524,7 +540,44 @@ struct proc* find_runnable_min_acc_proc()
 //  - swtch to start running that process.
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
-void scheduler(void)
+void
+rr_scheduler(void)
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  
+  c->proc = 0;
+  for(;;){
+    // Avoid deadlock by ensuring that devices can interrupt.
+    intr_on();
+
+    for(p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if(p->state == RUNNABLE) {
+        // Switch to chosen process.  It is the process's job
+        // to release its lock and then reacquire it
+        // before jumping back to us.
+        p->state = RUNNING;
+        c->proc = p;
+        swtch(&c->context, &p->context);
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
+      }
+      release(&p->lock);
+    }
+  }
+}
+
+// Per-CPU process scheduler.
+// Each CPU calls scheduler() after setting itself up.
+// Scheduler never returns.  It loops, doing:
+//  - choose a process to run.
+//  - swtch to start running that process.
+//  - eventually that process transfers control
+//    via swtch back to the scheduler.
+void pbs_scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
@@ -574,53 +627,57 @@ void scheduler(void)
   }
 }
 
-void another_scheduler_try(void)
+void cfs_scheduler(void)
 {
-  // long long min_acc = 0;
   struct proc *p;
   struct cpu *c = mycpu();
-  // struct proc *min_acc_proc = 0;
+  int process_vruntime;
   
   c->proc = 0;
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
 
-    struct proc* process = 0;
-      int dp = 101;
-      for (p = proc; p < &proc[NPROC]; p++)
-      {
-        acquire(&p->lock);
+    struct proc *next_proc = 0;
+    int min_vruntime = 2147483647;
 
-        int val = p->ps_priority;
-        int tmp = val < 100? val : 100;
-        int processDp = 0 > tmp ? 0 : tmp;
+    for(p = proc; p < &proc[NPROC]; p++)
+    {
+      acquire(&p->lock);
+      if(p->state == RUNNABLE) {
+        // Switch to chosen process.  It is the process's job
+        // to release its lock and then reacquire it
+        // before jumping back to us.
 
-        int flag1 = dp == processDp;
+        process_vruntime = get_process_vruntime(p);
 
-        if (p->state == RUNNABLE)
-        {
-          if(!process || dp > processDp || flag1)
-          {
-            if (process)
-              release(&process->lock);
-
-            process = p;
-            dp = processDp;
-            continue;
-          }
-        }
-        release(&p->lock);
+        if (!next_proc || process_vruntime < min_vruntime)
+            {
+              if (next_proc)
+              {
+                release(&next_proc->lock);
+              }              
+              min_vruntime = process_vruntime;
+              next_proc = p;
+              continue;
+            }
       }
+      release(&p->lock);
+    }
 
-      if (process)
-      {
-        process->state = RUNNING;
-        c->proc = process;
-        swtch(&c->context, &process->context);
-        c->proc = 0;
-        release(&process->lock);
-      }
+    if (!next_proc)
+    {
+      continue;
+    }
+    
+    next_proc->state = RUNNING;
+    c->proc = next_proc;
+    swtch(&c->context, &next_proc->context);
+
+    // Process is done running for now.
+    // It should have changed its p->state before coming back.
+    c->proc = 0;
+    release(&next_proc->lock);
   }
 }
 
