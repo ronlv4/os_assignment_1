@@ -566,7 +566,7 @@ scheduler(void)
         // to release its lock and then reacquire it
         // before jumping back to us.
 
-        if (sched_policy == 1) // cfs
+        if (sched_policy == CFS)
         {
           process_vruntime = get_process_vruntime(p);
 
@@ -582,7 +582,7 @@ scheduler(void)
               }
         }
 
-        else if (sched_policy == 2) // pbs
+        else if (sched_policy == PBS)
         {
           if (!next_proc || p->accumulator < min_acc)
               {

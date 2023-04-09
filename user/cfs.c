@@ -9,29 +9,33 @@ int main(int argc, char **argv)
   {
     if (fork() == 0)
     {
-        set_cfs_priority(2);
+      set_cfs_priority(2);
     }
     else
     {
-        set_cfs_priority(0);
+      set_cfs_priority(0);
     }
   }
-  // parent 1, child 0, grandchild 2
 
-  for (i = 0; i < 3000; i++)
+  // cfs priorities: parent 1, child 0, grandchild 2
+
+  for (i = 0; i < 10000; i++)
   {
     if (i % 1000 == 0)
     {
         // write(1, "going to sleep\n", 15);
-        sleep(1);
+        sleep(10);
         // write(1, "woke up\n", 8);
     }
   }
 
+  wait(0, 0);
+  wait(0 ,0);
+
   int pid = getpid();
   int cfs_priority, rtime, stime, retime;
 
-  printf("pid: %d\n");
+  printf("pid: %d\n", pid);
   printf("cfs stats: \n");
   if (get_cfs_stats(pid, &cfs_priority, &rtime, &stime, &retime))
   {

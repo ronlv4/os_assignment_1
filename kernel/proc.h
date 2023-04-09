@@ -80,6 +80,7 @@ struct trapframe {
 };
 
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+enum schedpolicy { RR, CFS, PBS };
 
 // Per-process state
 struct proc {
