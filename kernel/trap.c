@@ -167,6 +167,7 @@ clockintr()
   ticks++;
   update_process_time_values();
   wakeup(&ticks);
+  update_process_time_values();
   release(&tickslock);
 }
 
