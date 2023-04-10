@@ -578,6 +578,7 @@ scheduler(void)
         {
           if ((process_vruntime = get_process_vruntime(p)) < 0)
           {
+            release(&p->lock);
             continue;
           }
 
@@ -779,6 +780,18 @@ int set_ps_priority(int priority)
   p->ps_priority = priority;
   release(&p->lock);
   return 0;
+}
+
+int get_ps_priority(int pid)
+{
+  struct proc *p;
+
+  for(p = proc; p < &proc[NPROC]; p++){
+      if(p->pid == pid){
+        return p->ps_priority;
+      }
+  }
+  return -1; // pid not found
 }
 
 int set_cfs_priority(int priority)

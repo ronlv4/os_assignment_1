@@ -22,7 +22,8 @@
 #define SYS_close  21
 #define SYS_memsize 22
 #define SYS_set_ps_priority 23
-#define SYS_set_cfs_priority 24
-#define SYS_get_cfs_stats 25
-#define SYS_set_policy 26
-#define SYS_get_policy 27
+#define SYS_get_ps_priority 24
+#define SYS_set_cfs_priority 25
+#define SYS_get_cfs_stats 26
+#define SYS_set_policy 27
+#define SYS_get_policy 28

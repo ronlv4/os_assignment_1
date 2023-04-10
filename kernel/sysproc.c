@@ -113,6 +113,14 @@ uint64 sys_set_ps_priority(void)
 
   return set_ps_priority(priority);
 }
+uint64 sys_get_ps_priority(void)
+{
+  int pid;
+
+  argint(0, &pid);
+
+  return get_ps_priority(pid);
+}
 
 uint64 sys_set_cfs_priority(void)
 {
@@ -136,6 +144,8 @@ uint64 sys_get_cfs_stats(void)
 
   return get_cfs_stats(pid, cfs_priority, rtime, stime, retime);
 }
+
+
 
 uint64 sys_set_policy(void)
 {

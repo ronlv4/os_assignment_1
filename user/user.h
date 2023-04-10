@@ -24,6 +24,7 @@ int sleep(int);
 int uptime(void);
 int memsize(void);
 int set_ps_priority(int);
+int get_ps_priority(int);
 int set_cfs_priority(int);
 int set_policy(int);
 int get_policy(void);
