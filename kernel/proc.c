@@ -567,6 +567,7 @@ scheduler(void)
 
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
+
       if(p->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
@@ -607,11 +608,13 @@ scheduler(void)
               }
         }
 
-        else // round robin
+        else if (sched_policy == RR)
         {
           next_proc = p;
           break;
         }
+        else
+          panic("unknown sched policy");
       }
       release(&p->lock);
     }
