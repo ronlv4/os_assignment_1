@@ -15,7 +15,7 @@ struct proc *initproc;
 int nextpid = 1;
 struct spinlock pid_lock;
 
-static int sched_policy = 0;
+enum schedpolicy sched_policy = RR;
 //TODO should sched policy have a lock? does the scheduler need to acquire it for each complete p table iteration?
 
 
@@ -130,7 +130,7 @@ found:
   p->state = USED;
   p->accumulator = find_min_accumulator(p);
   p->ps_priority = 5;
-  p->cfs_priority = 2;
+  p->cfs_priority = 1;
   p->rtime = 0;
   p->stime = 0;
   p->retime = 0;
@@ -528,12 +528,18 @@ struct proc* find_runnable_min_acc_proc()
 int get_process_vruntime(struct proc *p)
 {
   static int priority_to_decay_factor[] = {
-    [1] 75,
-    [2] 100,
-    [3] 125
+    [0] 75,
+    [1] 100,
+    [2] 125
   };
+  int den = p->rtime + p->stime + p->retime;
 
-  return priority_to_decay_factor[p->cfs_priority] * p->rtime / (p->rtime + p->stime + p->retime);
+  if (den == 0)
+  {
+    return -1;
+  }
+
+  return priority_to_decay_factor[p->cfs_priority] * p->rtime / den;
 }
 
 // Per-CPU process scheduler.
@@ -568,14 +574,18 @@ scheduler(void)
 
         if (sched_policy == CFS)
         {
-          process_vruntime = get_process_vruntime(p);
+          if ((process_vruntime = get_process_vruntime(p)) < 0)
+          {
+            continue;
+          }
 
           if (!next_proc || process_vruntime < min_vruntime)
               {
                 if (next_proc)
                 {
                   release(&next_proc->lock);
-                }              
+                }
+
                 min_vruntime = process_vruntime;
                 next_proc = p;
                 continue;
@@ -589,7 +599,8 @@ scheduler(void)
                 if (next_proc)
                 {
                   release(&next_proc->lock);
-                }              
+                }           
+   
                 min_acc = p->accumulator;
                 next_proc = p;
                 continue;
