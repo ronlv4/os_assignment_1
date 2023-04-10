@@ -480,6 +480,7 @@ wait(uint64 addr, uint64 msg)
           pid = pp->pid;
           // Copy from kernel to user.
           if(addr != 0 &&
+          msg != 0 &&
           (copyout(p->pagetable, addr, (char *)&pp->xstate, sizeof(pp->xstate)) < 0 ||
           copyout(p->pagetable, msg, (char *)&pp->exit_msg, sizeof(pp->exit_msg)) < 0)) {
             release(&pp->lock);
@@ -798,6 +799,12 @@ int get_cfs_stats(int pid, uint64 cfs_priority, uint64 rtime, uint64 stime, uint
   for(p = proc; p < &proc[NPROC]; p++){
       if(p->pid == pid){
         acquire(&p->lock);
+
+        if (cfs_priority == 0 || rtime == 0 || stime == 0 || retime == 0)
+        {
+          release(&p->lock);
+          return -1;
+        }
         
         if (copyout(p->pagetable, cfs_priority, (char *)&p->cfs_priority, sizeof(p->cfs_priority)) < 0 ||
         copyout(p->pagetable, rtime, (char *)&p->rtime, sizeof(p->rtime)) < 0 ||
